@@ -1,0 +1,315 @@
+<!--
+  #%L
+  BroadleafCommerce Common Libraries
+  %%
+  Copyright (C) 2009 - 2023 Broadleaf Commerce
+  %%
+  Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+  (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+  unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+  the Broadleaf End User License Agreement (EULA), Version 1.1
+  (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+  shall apply.
+  
+  Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+  between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+  #L%
+  -->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.ehcache.org/v3" 
+        xmlns:jsr107="http://www.ehcache.org/v3/jsr107"
+        xsi:schemaLocation="http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.3.xsd 
+                           http://www.ehcache.org/v3/jsr107 http://www.ehcache.org/schema/ehcache-107-ext-3.0.xsd">
+
+    <service>
+        <jsr107:defaults enable-management="true" enable-statistics="true"/> 
+    </service>
+    
+    <persistence directory="${java.io.tmpdir}"/>
+    
+    <cache-template name="hydratedCacheTemplate">
+        <listeners>
+            <listener>
+                <class>org.broadleafcommerce.common.cache.engine.EhcacheHydratedCacheEventListener</class>
+                <event-firing-mode>SYNCHRONOUS</event-firing-mode>
+                <event-ordering-mode>ORDERED</event-ordering-mode>
+                <events-to-fire-on>CREATED</events-to-fire-on>
+                <events-to-fire-on>UPDATED</events-to-fire-on>
+                <events-to-fire-on>EXPIRED</events-to-fire-on>
+                <events-to-fire-on>REMOVED</events-to-fire-on>
+                <events-to-fire-on>EVICTED</events-to-fire-on>
+            </listener>
+        </listeners>
+    </cache-template>
+    
+    <!-- This is required by Hibernate to ensure that query caches return
+          correct results. It must contain at least as many entries as there are
+          DB tables and must never expire. -->
+     <cache alias="default-update-timestamps-region">
+         <expiry>
+             <none/>
+         </expiry>
+         <heap>5000</heap>
+     </cache>
+     
+     <cache alias="default-query-results-region">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+     
+    <cache alias="blStandardElements" uses-template="hydratedCacheTemplate">
+        <expiry>
+            <ttl>86400</ttl>
+        </expiry>
+        <heap>5000</heap>
+    </cache>
+    
+    <cache alias="blProducts" uses-template="hydratedCacheTemplate">
+        <expiry>
+            <ttl>86400</ttl>
+        </expiry>
+        <heap>100000</heap>
+    </cache>
+           
+    <cache alias="blProductUrlCache">
+        <expiry>
+            <ttl>3600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+    
+    <cache alias="blCategories" uses-template="hydratedCacheTemplate">
+        <expiry>
+            <ttl>86400</ttl>
+        </expiry>
+        <heap>3000</heap>
+    </cache>
+
+    <cache alias="blCategoryUrlCache">
+        <expiry>
+            <ttl>3600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blOffers" uses-template="hydratedCacheTemplate">
+        <expiry>
+            <ttl>86400</ttl>
+        </expiry>
+        <heap>100000</heap>
+    </cache>
+
+    <cache alias="blInventoryElements">
+        <expiry>
+            <ttl>60</ttl>
+        </expiry>
+        <heap>100000</heap>
+    </cache>
+
+    <cache alias="query.Catalog">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>10000</heap>
+    </cache>
+
+    <cache alias="query.PriceList">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="query.Cms">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="query.Offer">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blOrderElements">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>100000</heap>
+    </cache>
+
+     <cache alias="blCustomerElements">
+         <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>100000</heap>
+     </cache>
+
+    <cache alias="query.Order">
+        <expiry>
+            <ttl>60</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="query.Search">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+     <cache alias="generatedResourceCache">
+         <expiry>
+            <ttl>600</ttl>
+         </expiry>
+         <heap>100</heap>
+     </cache>
+
+     <cache alias="blTemplateElements">
+         <expiry>
+            <ttl>3600</ttl>
+         </expiry>
+         <heap>5000</heap>
+     </cache>
+
+    <cache alias="blTranslationElements">
+        <expiry>
+            <ttl>3600</ttl>
+        </expiry>
+        <heap>10000000</heap>
+    </cache>
+
+    <!-- The translation cache is evicted manually by the indexing process, never expire it -->
+    <cache alias="blBatchTranslationCache">
+        <expiry>
+            <none/>
+        </expiry>
+        <heap>10000</heap>
+    </cache>
+
+    <cache alias="blConfigurationModuleElements">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="query.ConfigurationModuleElements">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blSystemPropertyElements">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blSystemPropertyNullCheckCache">
+        <expiry>
+            <ttl>600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blBundleElements">
+        <expiry>
+            <ttl>86400</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blResourceCacheElements">
+        <expiry>
+            <ttl>86400</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blResourceTransformerCacheElements">
+        <expiry>
+            <ttl>86400</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blSandBoxElements">
+        <expiry>
+            <ttl>3</ttl>
+        </expiry>
+        <heap>2000</heap>
+    </cache>
+
+    <cache alias="query.blSandBoxElements">
+        <expiry>
+            <ttl>3</ttl>
+        </expiry>
+        <heap>500</heap>
+    </cache>
+
+    <cache alias="blSecurityElements">
+        <expiry>
+            <ttl>86400</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+
+    <cache alias="blSiteElements">
+        <expiry>
+            <ttl>3600</ttl>
+        </expiry>
+        <heap>5000</heap>
+    </cache>
+
+    <cache alias="blSiteElementsQuery">
+        <expiry>
+            <ttl>3600</ttl>
+        </expiry>
+        <heap>1000</heap>
+    </cache>
+    
+    <cache alias="blProductOverrideCache" >
+        <expiry>
+             <none/>
+         </expiry>
+        <heap>100</heap>
+    </cache>
+    
+    <cache alias="blCountryElements" >
+        <expiry>
+             <none/>
+         </expiry>
+        <heap>2000</heap>
+    </cache>
+    
+    <cache alias="blDataDrivenEnumeration" >
+        <expiry>
+             <ttl>86400</ttl>
+         </expiry>
+        <heap>1000</heap>
+    </cache>
+    
+     <cache alias="blMediaElements" >
+        <expiry>
+             <ttl>86400</ttl>
+         </expiry>
+        <heap>20000</heap>
+    </cache>
+    
+    <cache alias="blSystemProperties" >
+        <expiry>
+             <ttl>86400</ttl>
+         </expiry>
+        <heap>2000</heap>
+    </cache>
+    
+</config>

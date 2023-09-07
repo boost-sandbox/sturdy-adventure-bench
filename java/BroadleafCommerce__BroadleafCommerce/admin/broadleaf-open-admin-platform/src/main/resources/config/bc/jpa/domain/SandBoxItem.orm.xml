@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  BroadleafCommerce Open Admin Platform
+  %%
+  Copyright (C) 2009 - 2023 Broadleaf Commerce
+  %%
+  Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+  (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+  unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+  the Broadleaf End User License Agreement (EULA), Version 1.1
+  (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+  shall apply.
+  
+  Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+  between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+  #L%
+  -->
+
+<entity-mappings xmlns="http://java.sun.com/xml/ns/persistence/orm"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_2_0.xsd" version="2.0">
+
+    <named-query name="BC_READ_SANDBOX_ITEM_BY_TEMP_ITEM_ID" >
+        <query>SELECT sandboxItem FROM org.broadleafcommerce.openadmin.server.domain.SandBoxItemImpl sandboxItem
+               WHERE  sandboxItem.temporaryItemId = :temporaryItemId AND
+                      sandboxItem.sandBoxId = :sandboxId AND
+                      sandboxItem.archivedFlag = 'N' AND
+                      sandboxItem.sandBoxItemType = :itemType
+        </query>
+    </named-query>
+
+    <named-query name="BC_READ_SANDBOX_ITEM_BY_TEMP_ITEM_ID_AND_PROD_SANDBOX" >
+        <query>SELECT sandboxItem FROM org.broadleafcommerce.openadmin.server.domain.SandBoxItemImpl sandboxItem
+               WHERE  sandboxItem.temporaryItemId = :temporaryItemId AND
+                      sandboxItem.sandBoxId IS NULL AND
+                      sandboxItem.archivedFlag = 'N' AND
+                      sandboxItem.sandBoxItemType = :itemType
+        </query>
+    </named-query>
+
+    <named-query name="BC_READ_ALL_SANDBOX_ITEMS" >
+        <query>SELECT sandboxItem FROM org.broadleafcommerce.openadmin.server.domain.SandBoxItemImpl sandboxItem
+               WHERE  sandboxItem.sandBoxId = :sandboxId AND
+                      sandboxItem.archivedFlag = 'N'
+        </query>
+    </named-query>
+
+    <named-query name="BC_READ_ALL_SANDBOX_ITEMS_BY_TYPE" >
+        <query>SELECT sandboxItem FROM org.broadleafcommerce.openadmin.server.domain.SandBoxItemImpl sandboxItem
+               WHERE  sandboxItem.sandBoxId = :sandboxId AND
+                      sandboxItem.sandBoxItemType = :sandBoxItemType AND
+                      sandboxItem.archivedFlag = 'N'
+               ORDER BY sandboxItem.id
+        </query>
+    </named-query>
+
+    <named-query name="BC_READ_ALL_SANDBOX_ITEMS_BY_TYPES" >
+        <query>SELECT sandboxItem FROM org.broadleafcommerce.openadmin.server.domain.SandBoxItemImpl sandboxItem
+               WHERE  sandboxItem.sandBoxId = :sandboxId AND
+                      sandboxItem.sandBoxItemType IN (:sandBoxItemTypes) AND
+                      sandboxItem.archivedFlag = 'N'
+               ORDER BY sandboxItem.id
+        </query>
+    </named-query>
+
+    <named-query name="BC_READ_SANDBOX_ITEM_BY_GROUP_NAME" >
+        <query>SELECT sandboxItem FROM org.broadleafcommerce.openadmin.server.domain.SandBoxItemImpl sandboxItem
+               WHERE  sandboxItem.sandBoxId = :sandboxId AND
+                      sandboxItem.archivedFlag = 'N' AND
+                      sandboxItem.groupDescription = :groupName
+               ORDER BY sandboxItem.id
+        </query>
+    </named-query>
+
+</entity-mappings>

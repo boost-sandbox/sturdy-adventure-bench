@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  BroadleafCommerce Common Libraries
+  %%
+  Copyright (C) 2009 - 2023 Broadleaf Commerce
+  %%
+  Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+  (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+  unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+  the Broadleaf End User License Agreement (EULA), Version 1.1
+  (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+  shall apply.
+  
+  Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+  between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+  #L%
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/tx
+                        http://www.springframework.org/schema/tx/spring-tx.xsd
+                        http://www.springframework.org/schema/util
+                        http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <tx:annotation-driven/>
+
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean" depends-on="blCacheManager" primary="true">
+        <property name="jpaVendorAdapter" ref="blJpaVendorAdapter"/>
+        <property name="persistenceUnitManager" ref="blPersistenceUnitManager"/>
+        <property name="persistenceUnitName" value="blPU"/>
+    </bean>
+
+    <bean id="prodEntityManager" class="org.springframework.orm.jpa.support.SharedEntityManagerBean">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+
+    <bean id="blTransactionManager" primary="true" class="org.broadleafcommerce.common.persistence.transaction.LifecycleAwareJpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory" />
+    </bean>
+    <!-- Allows the use if @Transactional without any qualifiers -->
+    <alias alias="transactionManager" name="blTransactionManager"/>
+
+    <tx:advice id="blTxAdvice" transaction-manager="blTransactionManager">
+        <tx:attributes>
+            <tx:method name="*" propagation="REQUIRED"/>
+            <tx:method name="findNextId" propagation="REQUIRES_NEW"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!-- EntityManager,TransactionManager sets -->
+    <bean id="blDefaultTargetModeMap" class="org.springframework.beans.factory.config.MapFactoryBean">
+        <property name="sourceMap">
+            <map>
+                <entry key="sandbox">
+                    <map>
+                        <entry key="entityManager" value-ref="prodEntityManager"/>
+                        <entry key="transactionManager" value-ref="blTransactionManager"/>
+                    </map>
+                </entry>
+                <entry key="stage">
+                    <map>
+                        <entry key="entityManager" value-ref="prodEntityManager"/>
+                        <entry key="transactionManager" value-ref="blTransactionManager"/>
+                    </map>
+                </entry>
+                <entry key="production">
+                    <map>
+                        <entry key="entityManager" value-ref="prodEntityManager"/>
+                        <entry key="transactionManager" value-ref="blTransactionManager"/>
+                    </map>
+                </entry>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="blTargetModeMaps" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blDefaultTargetModeMap"/>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="blCacheManager" class="org.broadleafcommerce.common.extensibility.cache.jcache.MergeJCacheManagerFactoryBean"/>
+    
+    <bean id="blMergedCacheConfigLocations" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <value>classpath:bl-common-ehcache.xml</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="blMergedPersistenceXmlLocations" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <value>classpath*:/META-INF/persistence-common.xml</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="blMergedEntityContexts" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <value>classpath:bl-common-applicationContext-entity.xml</value>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="blPersistenceUnitManager" class="org.broadleafcommerce.common.extensibility.jpa.MergePersistenceUnitManager">
+        <property name="persistenceUnitPostProcessors" ref="blPersistenceUnitPostProcessors"/>
+    </bean>
+
+
+    <bean id="blPersistenceUnitPostProcessors" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <bean class="org.broadleafcommerce.common.extensibility.jpa.JPAPropertiesPersistenceUnitPostProcessor"/>
+                <bean class="org.broadleafcommerce.common.extensibility.jpa.ORMConfigPersistenceUnitPostProcessor"/>
+                <bean class="org.broadleafcommerce.common.extensibility.jpa.JCachePersistenceUnitPostProcessor"/>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="blEntityConfiguration" class="org.broadleafcommerce.common.persistence.EntityConfiguration"/>
+    
+    <import resource="bl-common-applicationContext-mbeans.xml" />
+    
+</beans>

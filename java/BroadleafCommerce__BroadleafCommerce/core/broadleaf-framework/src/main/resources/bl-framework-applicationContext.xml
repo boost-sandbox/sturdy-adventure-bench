@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  BroadleafCommerce Framework
+  %%
+  Copyright (C) 2009 - 2023 Broadleaf Commerce
+  %%
+  Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+  (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+  unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+  the Broadleaf End User License Agreement (EULA), Version 1.1
+  (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+  shall apply.
+  
+  Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+  between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+  #L%
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+    
+    <import resource="classpath:bl-framework-applicationContext-persistence.xml"/>
+    <import resource="classpath:bl-framework-applicationContext-workflow.xml"/>
+    
+    <context:component-scan base-package="org.broadleafcommerce.core">
+        <context:exclude-filter type="regex" expression="org.broadleafcommerce.core.web.*"/> 
+    </context:component-scan>
+
+    <!-- Bean for encrypting PCI data -->
+    <bean id="blEncryptionModule" class="org.broadleafcommerce.common.encryption.PassthroughEncryptionModule"/>
+    
+    <bean id="blAccountNumberMask" class="org.broadleafcommerce.common.payment.AccountNumberMask">
+        <constructor-arg index="0">
+            <list>
+                <bean class="org.broadleafcommerce.common.payment.UnmaskRange">
+                    <constructor-arg value="0"/>
+                    <constructor-arg value="0"/>
+                </bean>
+                <bean class="org.broadleafcommerce.common.payment.UnmaskRange">
+                    <constructor-arg value="1"/>
+                    <constructor-arg value="4"/>
+                </bean>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="1" value="X"/>
+    </bean>
+
+    <bean id="blContentCartRuleProcessor" class="org.broadleafcommerce.core.order.service.StructuredContentCartRuleProcessor">
+        <property name="orderDao" ref="blOrderDao"/>
+        <property name="contextClassNames">
+            <map>
+                <entry key="discreteOrderItem" value="org.broadleafcommerce.core.order.domain.DiscreteOrderItem" />
+            </map>
+        </property>
+    </bean>
+
+    <!-- Append the content rule processor that checks for cart contents -->
+    <bean id="blContentRuleProcessors" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blContentCartRuleProcessor"/>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="blPageCartRuleProcessor" class="org.broadleafcommerce.core.order.service.PageCartRuleProcessor">
+        <property name="orderDao" ref="blOrderDao"/>
+        <property name="contextClassNames">
+            <map>
+                <entry key="discreteOrderItem" value="org.broadleafcommerce.core.order.domain.DiscreteOrderItem" />
+            </map>
+        </property>
+    </bean>
+
+    <!-- Append the content rule processor that checks for cart contents -->
+    <bean id="blPageRuleProcessors" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blPageCartRuleProcessor"/>
+            </list>
+        </property>
+    </bean>    
+
+    <bean id="blConverters" class="org.springframework.beans.factory.config.SetFactoryBean">
+        <property name="sourceSet">
+            <set>
+                <bean class="org.broadleafcommerce.common.locale.util.LocaleConverter" />
+            </set>
+        </property>
+    </bean>
+    
+    <bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+        <property name="converters" ref="blConverters" />
+    </bean>
+    
+    <bean id="blFrameworkSiteMapGenerators" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blCategorySiteMapGenerator" />
+                <ref bean="blProductSiteMapGenerator" />
+                <ref bean="blSkuSiteMapGenerator" />
+            </list>
+        </property>
+    </bean>
+
+    <bean class="org.broadleafcommerce.common.extensibility.context.merge.LateStageMergeBeanPostProcessor">
+        <property name="collectionRef" value="blFrameworkSiteMapGenerators" />
+        <property name="targetRef" value="blSiteMapGenerators" />
+    </bean>
+
+    <bean id="blFrameworkEntityExtensionManagers" class="org.springframework.beans.factory.config.MapFactoryBean">
+        <property name="sourceMap">
+            <map>
+            </map>
+        </property>
+    </bean>
+
+    <bean class="org.broadleafcommerce.common.extensibility.context.merge.LateStageMergeBeanPostProcessor">
+        <property name="collectionRef" value="blFrameworkEntityExtensionManagers"/>
+        <property name="targetRef" value="blEntityExtensionManagers"/>
+    </bean>
+
+    <!-- Add a default implementation for payments of type PaymentGatewayType.PASSTHROUGH -->
+    <bean id="blPassthroughPaymentConfigurationServiceList" class="org.springframework.beans.factory.config.ListFactoryBean" >
+        <property name="sourceList">
+            <list>
+                <ref bean="blPassthroughPaymentConfigurationService"/>
+            </list>
+        </property>
+    </bean>
+
+    <bean class="org.broadleafcommerce.common.extensibility.context.merge.LateStageMergeBeanPostProcessor">
+        <property name="collectionRef" value="blPassthroughPaymentConfigurationServiceList"/>
+        <property name="targetRef" value="blPaymentGatewayConfigurationServices"/>
+    </bean>
+
+    <bean class="org.broadleafcommerce.core.search.service.solr.FileSystemSolrIndexStatusProviderImpl" name="blFileSystemSolrIndexStatusProvider"/>
+
+    <bean id="blSolrIndexStatusProviders" class="org.springframework.beans.factory.config.ListFactoryBean" >
+        <property name="sourceList">
+            <list>
+                <ref bean="blFileSystemSolrIndexStatusProvider"/>
+            </list>
+        </property>
+    </bean>
+
+    <!-- Begin Section Custom Criteria -->
+    <bean id="blProductSectionCustomCriteria" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <value>productDirectEdit</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="blCategorySectionCustomCriteria" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <value>categoryDirectEdit</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="blAdvancedPageSectionCustomCriteria" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <value>advancedPage</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="blSectionCustomCriteriaMap" class="org.springframework.beans.factory.config.MapFactoryBean">
+        <property name="sourceMap">
+            <map>
+                <entry key="org.broadleafcommerce.core.catalog.domain.Product" value-ref="blProductSectionCustomCriteria"/>
+                <entry key="org.broadleafcommerce.core.catalog.domain.Category" value-ref="blCategorySectionCustomCriteria"/>
+                <entry key="org.broadleafcommerce.cms.page.domain.Page" value-ref="blAdvancedPageSectionCustomCriteria"/>
+            </map>
+        </property>
+    </bean>
+    <!-- End Section Custom Criteria -->
+
+    <bean id="blOptionalFrameworkTokenMap" class="org.springframework.beans.factory.config.MapFactoryBean">
+        <property name="sourceMap">
+            <map>
+                <entry key="optionalOfferUsesFields" value="org.broadleafcommerce.core.offer.weave.WeaveLegacyOfferUses"/>
+                <entry key="optionalSkuMinOrderQuantityField" value="org.broadleafcommerce.core.catalog.domain.WeaveSkuMinOrderQuantity"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean class="org.broadleafcommerce.common.extensibility.context.merge.EarlyStageMergeBeanPostProcessor">
+        <property name="collectionRef" value="blOptionalFrameworkTokenMap"/>
+        <property name="targetRef" value="blDirectCopyTransformTokenMap"/>
+    </bean>
+
+    <bean id="blOfferUsesConditionalDirectCopyTransformerMember" class="org.broadleafcommerce.common.weave.ConditionalDirectCopyTransformMemberDto">
+        <property name="templateTokens">
+            <util:constant static-field="org.broadleafcommerce.core.offer.service.type.OfferOptionalDirectCopyTransformTypes.OPTIONAL_OFFER_USES_FIELDS"/>
+        </property>
+        <property name="conditionalProperty" value="enable.optional.offer.uses.fields"/>
+    </bean>
+
+    <bean id="blSkuMinOrderQuantityConditionalDirectCopyTransformerMember" class="org.broadleafcommerce.common.weave.ConditionalDirectCopyTransformMemberDto">
+        <property name="templateTokens" value="optionalSkuMinOrderQuantityField"/>
+        <property name="conditionalProperty" value="enable.sku.minOrderQuantity.field"/>
+    </bean>
+
+    <bean id="blFrameworkConditionalDirectCopyTransformers" class="org.springframework.beans.factory.config.MapFactoryBean">
+        <property name="sourceMap">
+            <map>
+                <entry key="org.broadleafcommerce.core.offer.domain.OfferImpl" value-ref="blOfferUsesConditionalDirectCopyTransformerMember" />
+                <entry key="org.broadleafcommerce.core.catalog.domain.SkuImpl" value-ref="blSkuMinOrderQuantityConditionalDirectCopyTransformerMember" />
+            </map>
+        </property>
+    </bean>
+
+    <bean class="org.broadleafcommerce.common.extensibility.context.merge.EarlyStageMergeBeanPostProcessor">
+        <property name="collectionRef" value="blFrameworkConditionalDirectCopyTransformers"/>
+        <property name="targetRef" value="blConditionalDirectCopyTransformers"/>
+    </bean>
+
+    <bean id="blPromotionMessageGenerators" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+            </list>
+        </property>
+    </bean>
+
+	<bean id="blEntityIdentifierUtil" class="org.broadleafcommerce.core.util.EntityIdentifierUtil" />
+
+    <!-- Default instantiation is non-distributed.  Override this bean definition and provide a Zookeeper or CloudSolrClient instance
+     and, optionally, an Environment instance to make this a distributed component, backed by Zookeeper. -->
+    <bean id="blSolrIndexQueueProvider" class="org.broadleafcommerce.core.search.service.solr.indexer.DefaultSolrIndexQueueProvider"/>
+
+    <bean id="blEntityDuplicationHelpers"
+          class="org.springframework.beans.factory.config.ListFactoryBean" scope="prototype">
+        <property name="sourceList">
+            <list>
+                <ref bean="blOfferDuplicateModifier"/>
+                <ref bean="blProductDuplicateModifier"/>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="blMergedCacheConfigLocations-framework" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <value>classpath:bl-framework-ehcache.xml</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean class="org.broadleafcommerce.common.extensibility.context.merge.EarlyStageMergeBeanPostProcessor">
+        <property name="collectionRef" value="blMergedCacheConfigLocations-framework"/>
+        <property name="targetRef" value="blMergedCacheConfigLocations"/>
+    </bean>
+
+    <bean id="blUsingDefaultSkuInInventoryTokenMap" class="org.springframework.beans.factory.config.MapFactoryBean">
+        <property name="sourceMap">
+            <map>
+                <entry key="enableUseDefaultSkuInventory"
+                       value="org.broadleafcommerce.core.catalog.domain.WeaveProductSkuUsage"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean class="org.broadleafcommerce.common.extensibility.context.merge.EarlyStageMergeBeanPostProcessor">
+        <property name="collectionRef" value="blUsingDefaultSkuInInventoryTokenMap"/>
+        <property name="targetRef" value="blDirectCopyTransformTokenMap"/>
+    </bean>
+
+    <bean id="blProductUsingDefaultSkuInInventoryDirectCopyTransformerMember"
+          class="org.broadleafcommerce.common.weave.ConditionalDirectCopyTransformMemberDto">
+        <property name="templateTokens" value="enableUseDefaultSkuInventory"/>
+        <property name="conditionalProperty" value="enable.weave.use.default.sku.inventory"/>
+    </bean>
+
+    <bean id="blProductInventoryUseDefaultSku"
+          class="org.springframework.beans.factory.config.MapFactoryBean">
+        <property name="sourceMap">
+            <map>
+                <entry key="org.broadleafcommerce.core.catalog.domain.ProductImpl"
+                       value-ref="blProductUsingDefaultSkuInInventoryDirectCopyTransformerMember"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean class="org.broadleafcommerce.common.extensibility.context.merge.EarlyStageMergeBeanPostProcessor">
+        <property name="collectionRef" value="blProductInventoryUseDefaultSku"/>
+        <property name="targetRef" value="blConditionalDirectCopyTransformers"/>
+    </bean>
+
+</beans>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  BroadleafCommerce CMS Module
+  %%
+  Copyright (C) 2009 - 2023 Broadleaf Commerce
+  %%
+  Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+  (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+  unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+  the Broadleaf End User License Agreement (EULA), Version 1.1
+  (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+  shall apply.
+  
+  Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+  between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+  #L%
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+    
+    <!-- Entity mappings - override for extensibility -->
+    <bean id="org.broadleafcommerce.cms.page.domain.Page" class="org.broadleafcommerce.cms.page.domain.PageImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.page.domain.PageAttribute" class="org.broadleafcommerce.cms.page.domain.PageAttributeImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.page.domain.PageRule" class="org.broadleafcommerce.cms.page.domain.PageRuleImpl" scope="prototype"/>
+
+    <bean id="org.broadleafcommerce.cms.page.domain.PageTemplate" class="org.broadleafcommerce.cms.page.domain.PageTemplateImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.file.domain.StaticAssetStorage" class="org.broadleafcommerce.cms.file.domain.StaticAssetStorageImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.file.domain.StaticAsset" class="org.broadleafcommerce.cms.file.domain.StaticAssetImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.structure.domain.StructuredContent" class="org.broadleafcommerce.cms.structure.domain.StructuredContentImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.structure.domain.StructuredContentType" class="org.broadleafcommerce.cms.structure.domain.StructuredContentTypeImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.structure.domain.StructuredContentFieldTemplate" class="org.broadleafcommerce.cms.structure.domain.StructuredContentFieldTemplateImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.structure.domain.StructuredContentRule" class="org.broadleafcommerce.cms.structure.domain.StructuredContentRuleImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.url.domain.URLHandler" class="org.broadleafcommerce.cms.url.domain.URLHandlerImpl" scope="prototype"/>
+
+    <bean id="org.broadleafcommerce.cms.field.domain.FieldDefinition" class="org.broadleafcommerce.cms.field.domain.FieldDefinitionImpl" scope="prototype"/>
+    <bean id="org.broadleafcommerce.cms.structure.domain.StructuredContentField" class="org.broadleafcommerce.cms.structure.domain.StructuredContentFieldImpl" scope="prototype"/>
+
+</beans>

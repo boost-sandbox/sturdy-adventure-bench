@@ -1,0 +1,16 @@
+﻿@using Smartstore.Web.Models.Catalog;
+
+@model ProductSummaryModel
+
+@{
+    var isGrid = Model.ViewMode == ProductSummaryViewMode.Grid;
+    var title = isGrid ? T("Products.SwitchToList") : T("Products.SwitchToGrid");
+    var url = isGrid ? Display.ModifyUrl(null, "v=list") : Display.ModifyUrl(null, "v=grid");
+    var icon = isGrid ? "list" : "th";
+}
+
+<div class="artlist-action artlist-action--viewmode">
+    <a href='@url' class="btn btn-light btn-artlist-action tooltip-toggle rounded" data-toggle="tooltip" rel="nofollow" title="@title">
+        <i class="fa fa-@icon"></i>
+    </a>
+</div>

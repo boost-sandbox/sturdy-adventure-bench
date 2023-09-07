@@ -1,0 +1,150 @@
+/*-
+ * #%L
+ * BroadleafCommerce Admin Module
+ * %%
+ * Copyright (C) 2009 - 2023 Broadleaf Commerce
+ * %%
+ * Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+ * (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+ * unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+ * the Broadleaf End User License Agreement (EULA), Version 1.1
+ * (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+ * shall apply.
+ * 
+ * Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+ * between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+ * #L%
+ */
+package org.broadleafcommerce.admin.server.service.handler;
+
+import org.apache.commons.lang3.StringUtils;
+import org.broadleafcommerce.common.exception.ServiceException;
+import org.broadleafcommerce.common.presentation.client.OperationType;
+import org.broadleafcommerce.common.presentation.client.PersistencePerspectiveItemType;
+import org.broadleafcommerce.common.sandbox.SandBoxHelper;
+import org.broadleafcommerce.core.catalog.dao.ProductOptionDao;
+import org.broadleafcommerce.core.catalog.domain.ProductOption;
+import org.broadleafcommerce.core.catalog.service.type.ProductOptionType;
+import org.broadleafcommerce.openadmin.dto.CriteriaTransferObject;
+import org.broadleafcommerce.openadmin.dto.DynamicResultSet;
+import org.broadleafcommerce.openadmin.dto.Entity;
+import org.broadleafcommerce.openadmin.dto.FieldMetadata;
+import org.broadleafcommerce.openadmin.dto.PersistencePackage;
+import org.broadleafcommerce.openadmin.dto.PersistencePerspective;
+import org.broadleafcommerce.openadmin.dto.Property;
+import org.broadleafcommerce.openadmin.server.dao.DynamicEntityDao;
+import org.broadleafcommerce.openadmin.server.service.handler.CustomPersistenceHandlerAdapter;
+import org.broadleafcommerce.openadmin.server.service.persistence.module.RecordHelper;
+import org.springframework.stereotype.Component;
+
+import java.util.Map;
+
+import javax.annotation.Resource;
+
+/**
+ * 
+ *  This class is used to prevent updates to Product Options if "Use in Sku generation" is true but no "Allowed Values" 
+ *  have been set.
+ * 
+ *  @author Nathan Moore (nathanmoore)
+ *  
+ */
+@Component("blProductOptionsCustomPersistenceHandler")
+public class ProductOptionsCustomPersistenceHandler extends CustomPersistenceHandlerAdapter {
+
+    private static final int MAX_BOOLEAN_VALUES = 2;
+
+    @Resource(name="blProductOptionDao")
+    protected ProductOptionDao productOptionDao;
+
+    @Resource(name="blSandBoxHelper")
+    protected SandBoxHelper sandBoxHelper;
+
+    @Override
+    public Boolean canHandleUpdate(PersistencePackage persistencePackage) {
+        String ceilingEntityFullyQualifiedClassname = persistencePackage.getCeilingEntityFullyQualifiedClassname();
+        try {
+            Class testClass = Class.forName(ceilingEntityFullyQualifiedClassname);
+            return ProductOption.class.isAssignableFrom(testClass);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public Boolean canHandleFetch(PersistencePackage persistencePackage) {
+        return canHandleUpdate(persistencePackage) &&
+                !persistencePackage.getPersistencePerspectiveItems().containsKey(PersistencePerspectiveItemType.ADORNEDTARGETLIST);
+    }
+
+    @Override
+    public DynamicResultSet fetch(PersistencePackage persistencePackage, CriteriaTransferObject cto, DynamicEntityDao
+            dynamicEntityDao, RecordHelper helper) throws ServiceException {
+        DynamicResultSet response = helper.getCompatibleModule(OperationType.BASIC).fetch(persistencePackage, cto);
+        for (Entity entity : response.getRecords()) {
+            Property prop = entity.findProperty("useInSkuGeneration");
+            if (prop != null && StringUtils.isEmpty(prop.getValue())) {
+                prop.setValue("true");
+            }
+        }
+        return response;
+    }
+
+    @Override
+    public Entity update(PersistencePackage persistencePackage, DynamicEntityDao dynamicEntityDao, RecordHelper helper) throws ServiceException {
+        Entity entity = persistencePackage.getEntity();
+        try {
+            PersistencePerspective persistencePerspective = persistencePackage.getPersistencePerspective();
+
+            Map<String, FieldMetadata> adminProperties = helper.getSimpleMergedProperties(ProductOption.class.getName(), persistencePerspective);
+
+            Object primaryKey = helper.getPrimaryKey(entity, adminProperties);
+            ProductOption adminInstance = (ProductOption) dynamicEntityDao.retrieve(Class.forName(entity.getType()[0]), primaryKey);
+
+            adminInstance = (ProductOption) helper.createPopulatedInstance(adminInstance, entity, adminProperties, false);
+            // validate Product Option
+            if (validateProductOption(adminInstance, entity)) {
+                return entity;
+            }
+            
+            adminInstance = (ProductOption) dynamicEntityDao.merge(adminInstance);
+            return helper.getRecord(adminProperties, adminInstance, null, null);
+
+        } catch (Exception e) {
+            throw new ServiceException("Unable to update entity for " + entity.getType()[0], e);
+        }
+    }
+
+    /**
+     * This function checks if a Product Option's "Use in sku generation" field is set to true 
+     * without any allowed values set. This is what we are trying to prevent from happening. 
+     * If "Use in sku generation" is true and there are no Allowed Values, the functions returns true.
+     * 
+     * @param adminInstance: The Product Option being validated
+     * @return boolean: Default is false. Returns whether the Product Option needs any Allowed Values .
+     */
+    protected boolean validateProductOption(ProductOption adminInstance, Entity entity) {
+        // validate "Use in Sku generation"
+        // Check during a save (not in a replay operation) if "use in sku generation" is true
+        // and that there are allowed values set
+        if (adminInstance.getUseInSkuGeneration() && !sandBoxHelper.isReplayOperation()) {
+            Long count = productOptionDao.countAllowedValuesForProductOptionById(adminInstance.getId());
+            if(count.equals(0L)){
+                String errorMessage = "Must add at least 1 Allowed Value when Product Option is used in Sku generation";
+                entity.addValidationError("useInSkuGeneration", errorMessage);
+                return true;
+            }
+        }
+        // Else either there are allowed values and/or "use in sku generation" is false
+
+        // Validate values and type
+        if (adminInstance.getType() != null && adminInstance.getType().getType().equals(ProductOptionType.BOOLEAN.getType())
+            && adminInstance.getAllowedValues().size() > MAX_BOOLEAN_VALUES) {
+            String errorMessage = "The Product Option with the 'Boolean' type can't have more than " + MAX_BOOLEAN_VALUES + " values";
+            entity.addValidationError("type", errorMessage);
+            return true;
+        }
+
+        return false;
+    }
+}

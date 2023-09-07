@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  BroadleafCommerce CMS Module
+  %%
+  Copyright (C) 2009 - 2023 Broadleaf Commerce
+  %%
+  Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+  (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+  unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+  the Broadleaf End User License Agreement (EULA), Version 1.1
+  (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+  shall apply.
+  
+  Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+  between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+  #L%
+  -->
+
+<entity-mappings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xmlns="http://java.sun.com/xml/ns/persistence/orm"
+                 xsi:schemaLocation="http://java.sun.com/xml/ns/persistence/orm http://java.sun.com/xml/ns/persistence/orm_2_0.xsd"
+                 version="2.0">
+
+    <named-query name="BC_READ_PAGE_TEMPLATES_FOR_DEFAULT_LOCALE">
+        <query>SELECT pageTemplate
+            FROM org.broadleafcommerce.cms.page.domain.PageTemplate pageTemplate
+            WHERE
+            pageTemplate.locale.defaultFlag = true
+        </query>
+    </named-query>
+
+    <named-query name="BC_READ_PAGE_BY_URI">
+        <query>SELECT page
+            FROM org.broadleafcommerce.cms.page.domain.PageImpl page
+            WHERE
+            page.fullUrl = :uri AND
+            (page.pageTemplate.locale is null OR page.pageTemplate.locale = :fullLocale OR
+            page.pageTemplate.locale = :languageOnlyLocale) AND
+            (page.offlineFlag is null OR page.offlineFlag = false)
+        </query>
+    </named-query>
+
+</entity-mappings>

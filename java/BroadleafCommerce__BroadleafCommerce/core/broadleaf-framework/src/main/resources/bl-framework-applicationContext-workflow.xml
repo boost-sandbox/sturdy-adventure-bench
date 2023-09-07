@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  BroadleafCommerce Framework
+  %%
+  Copyright (C) 2009 - 2023 Broadleaf Commerce
+  %%
+  Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+  (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+  unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+  the Broadleaf End User License Agreement (EULA), Version 1.1
+  (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+  shall apply.
+  
+  Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+  between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+  #L%
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/aop
+                           http://www.springframework.org/schema/aop/spring-aop.xsd">
+    
+    <bean id="blTaxProviders" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list />
+        </property>
+    </bean>
+    
+    <bean id="blFulfillmentLocationResolver" class="org.broadleafcommerce.core.pricing.service.fulfillment.SimpleFulfillmentLocationResolver" />
+
+    <bean id="blFixedPriceFulfillmentPricingProvider"
+            class="org.broadleafcommerce.core.pricing.service.fulfillment.provider.FixedPriceFulfillmentPricingProvider" />
+    <bean id="blBandedFulfillmentPricingProvider"
+            class="org.broadleafcommerce.core.pricing.service.fulfillment.provider.BandedFulfillmentPricingProvider" />
+
+    <bean id="blFulfillmentPricingProviders" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+               <ref bean="blFixedPriceFulfillmentPricingProvider" />
+               <ref bean="blBandedFulfillmentPricingProvider" />
+            </list>
+        </property>
+    </bean>
+    
+    <!-- Pricing Workflow configuration -->
+    <bean id="blPricingWorkflow" class="org.broadleafcommerce.core.workflow.SequenceProcessor">
+        <property name="processContextFactory">
+            <bean class="org.broadleafcommerce.core.pricing.service.workflow.PricingProcessContextFactory"/>
+        </property>
+        <property name="activities" ref="blPricingWorkflowActivities"/>
+        <property name="defaultErrorHandler">
+            <bean class="org.broadleafcommerce.core.workflow.DefaultErrorHandler">
+                <property name="unloggedExceptionClasses">
+                    <list>
+                        <value>org.hibernate.exception.LockAcquisitionException</value>
+                    </list>
+                </property>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="blPricingWorkflowActivities" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blOfferActivity" />
+                <ref bean="blConsolidateFulfillmentFeesActivity" />
+                <ref bean="blFulfillmentItemPricingActivity" />
+                <ref bean="blFulfillmentGroupMerchandiseTotalActivity" />
+                <ref bean="blFulfillmentGroupPricingActivity" />
+                <ref bean="blShippingOfferActivity" />
+                <ref bean="blTaxActivity" />
+                <ref bean="blTotalActivity"/>
+                <ref bean="blAdjustOrderPaymentsActivity"/>
+                <ref bean="blCountTotalOffersActivity" />
+                <ref bean="blDetermineOfferChangeActivity" />
+            </list>
+        </property>
+    </bean>
+    
+    <!-- Add Item Workflow Configuration -->
+    <bean id="blAddItemWorkflow" class="org.broadleafcommerce.core.workflow.SequenceProcessor">
+        <property name="processContextFactory">
+            <bean class="org.broadleafcommerce.core.order.service.workflow.CartOperationProcessContextFactory"/>
+        </property>
+        <property name="activities" ref="blAddItemWorkflowActivities"/>
+        <property name="defaultErrorHandler">
+            <bean class="org.broadleafcommerce.core.workflow.DefaultErrorHandler">
+                <property name="unloggedExceptionClasses">
+                    <list>
+                        <value>org.broadleafcommerce.core.order.service.exception.MinQuantityNotFulfilledException</value>
+                        <value>org.broadleafcommerce.core.inventory.service.InventoryUnavailableException</value>
+                        <value>org.broadleafcommerce.core.order.service.exception.RequiredAttributeNotProvidedException</value>
+                    </list>
+                </property>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="blAddItemWorkflowActivities" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blValidateAddRequestActivity" />
+                <ref bean="blCheckAddAvailabilityActivity" />
+                <ref bean="blAddOrderItemActivity" />
+                <ref bean="blAddFulfillmentGroupItemActivity" />
+                <ref bean="blAddWorkflowPriceOrderIfNecessaryActivity" />
+                <ref bean="blAddWorkflowVerifyFulfillmentGroupItemsActivity" />
+            </list>
+        </property>
+    </bean>
+
+    <!-- Update Item Workflow Configuration -->
+    <bean id="blUpdateItemWorkflow" class="org.broadleafcommerce.core.workflow.SequenceProcessor">
+        <property name="processContextFactory">
+            <bean class="org.broadleafcommerce.core.order.service.workflow.CartOperationProcessContextFactory"/>
+        </property>
+        <property name="activities" ref="blUpdateItemWorkflowActivities"/>
+        <property name="defaultErrorHandler">
+            <bean class="org.broadleafcommerce.core.workflow.DefaultErrorHandler">
+                <property name="unloggedExceptionClasses">
+                    <list>
+                        <value>org.broadleafcommerce.core.order.service.exception.MinQuantityNotFulfilledException</value>
+                        <value>org.broadleafcommerce.core.inventory.service.InventoryUnavailableException</value>
+                        <value>org.broadleafcommerce.core.order.service.exception.RequiredAttributeNotProvidedException</value>
+                    </list>
+                </property>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="blUpdateItemWorkflowActivities" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blValidateUpdateRequestActivity" />
+                <ref bean="blCheckUpdateAvailabilityActivity" />
+                <ref bean="blUpdateOrderItemActivity" />
+                <ref bean="blUdateOrderMultishipOptionActivity" />
+                <ref bean="blUpdateFulfillmentGroupItemActivity" />
+                <ref bean="blUpdateWorkflowPriceOrderIfNecessaryActivity" />
+                <ref bean="blUpdateWorkflowVerifyFulfillmentGroupItemsActivity" />
+            </list>
+        </property>
+    </bean>
+
+    <!-- Update Item Workflow Configuration -->
+    <bean id="blUpdateProductOptionsForItemWorkflow" class="org.broadleafcommerce.core.workflow.SequenceProcessor">
+        <property name="processContextFactory">
+            <bean class="org.broadleafcommerce.core.order.service.workflow.CartOperationProcessContextFactory"/>
+        </property>
+        <property name="activities" ref="blUpdateProductOptionsForItemWorkflowActivities"/>
+        <property name="defaultErrorHandler" ref="blDefaultErrorHandler"/>
+    </bean>
+
+    <bean id="blUpdateProductOptionsForItemWorkflowActivities" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blValidateUpdateProductOptionsRequestActivity" />
+                <ref bean="blUpdateProductOptionsOrderItemActivity" />
+            </list>
+        </property>
+    </bean>
+    
+    <!-- Remove Item Workflow Configuration -->
+    <bean id="blRemoveItemWorkflow" class="org.broadleafcommerce.core.workflow.SequenceProcessor">
+        <property name="processContextFactory">
+            <bean class="org.broadleafcommerce.core.order.service.workflow.CartOperationProcessContextFactory"/>
+        </property>
+        <property name="activities" ref="blRemoveItemWorkflowActivities"/>
+        <property name="defaultErrorHandler" ref="blDefaultErrorHandler"/>
+    </bean>
+
+    <bean id="blRemoveItemWorkflowActivities" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blValidateRemoveRequestActivity" />
+                <ref bean="blRemoveOrderMultishipOptionActivity" />
+                <ref bean="blRemoveFulfillmentGroupItemActivity" />
+                <ref bean="blRemoveOrderItemActivity" />
+                <ref bean="blRemoveWorkflowPriceOrderIfNecessaryActivity" />
+                <ref bean="blRemoveWorkflowVerifyFulfillmentGroupItemsActivity" />
+            </list>
+        </property>
+    </bean>
+
+    <!-- Checkout Workflow Configuration -->
+    <bean id="blCheckoutWorkflow" class="org.broadleafcommerce.core.workflow.SequenceProcessor">
+        <property name="processContextFactory">
+            <bean class="org.broadleafcommerce.core.checkout.service.workflow.CheckoutProcessContextFactory"/>
+        </property>
+        <property name="activities" ref="blCheckoutWorkflowActivities"/>
+        <property name="defaultErrorHandler">
+            <bean class="org.broadleafcommerce.core.workflow.DefaultErrorHandler">
+                <property name="unloggedExceptionClasses">
+                    <list>
+                        <value>org.broadleafcommerce.core.inventory.service.InventoryUnavailableException</value>
+                    </list>
+                </property>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="blCheckoutWorkflowActivities" class="org.springframework.beans.factory.config.ListFactoryBean">
+        <property name="sourceList">
+            <list>
+                <ref bean="blValidateCheckoutActivity"/>
+                <ref bean="blValidateAvailabilityActivity"/>
+                <ref bean="blVerifyCustomerMaxOfferUsesActivity" />
+                <ref bean="blValidateProductOptionsActivity" />
+                <ref bean="blValidateAndConfirmPaymentActivity" />
+                <ref bean="blRecordOfferUsageActivity" />
+                <ref bean="blCommitTaxActivity" />
+                <ref bean="blDecrementInventoryActivity" />
+                <ref bean="blCompleteOrderActivity" />
+            </list>
+        </property>
+    </bean>
+
+    <aop:config>
+        <aop:aspect id="qosAspect" ref="blServiceMonitor">
+            <aop:pointcut id="qosMethod" expression="execution(* org.broadleafcommerce.common.vendor.service.monitor.ServiceStatusDetectable.process(..))"/>
+            <aop:around method="checkServiceAOP" pointcut-ref="qosMethod"/>
+        </aop:aspect>
+    </aop:config>
+       
+</beans>

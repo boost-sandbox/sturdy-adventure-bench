@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  BroadleafCommerce CMS Module
+  %%
+  Copyright (C) 2009 - 2023 Broadleaf Commerce
+  %%
+  Licensed under the Broadleaf Fair Use License Agreement, Version 1.0
+  (the "Fair Use License" located  at http://license.broadleafcommerce.org/fair_use_license-1.0.txt)
+  unless the restrictions on use therein are violated and require payment to Broadleaf in which case
+  the Broadleaf End User License Agreement (EULA), Version 1.1
+  (the "Commercial License" located at http://license.broadleafcommerce.org/commercial_license-1.1.txt)
+  shall apply.
+  
+  Alternatively, the Commercial License may be replaced with a mutually agreed upon license (the "Custom License")
+  between you and Broadleaf Commerce. You may not use this file except in compliance with the applicable license.
+  #L%
+  -->
+
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <aop:config/>
+
+    <!-- This resolver locates the "blStaticAssetView" ViewResolver using its bean name. -->
+    <bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+        <property name="order" value="-1"/>
+    </bean>
+
+    <bean id="blStaticAssetView" class="org.broadleafcommerce.cms.web.file.StaticAssetView"/>
+
+    <bean id="blStaticAssetViewController" class="org.broadleafcommerce.cms.web.file.StaticAssetViewController">
+        <property name="assetServerUrlPrefix" value="${asset.server.url.prefix.internal}"/>
+        <property name="viewResolverName" value="blStaticAssetView"/>
+    </bean>
+
+    <bean id="blStaticAssetURLHandlerMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+        <!--  Before mvc:annotationdriven but after static content / resource filters -->
+        <property name="order" value="-1"/>
+        <property name="alwaysUseFullPath" value="true"></property>
+        <property name="mappings">
+            <map>
+                <entry key="/**/${asset.server.url.prefix.internal}/**" value-ref="blStaticAssetViewController"/>
+                <entry key="/${asset.server.url.prefix.internal}/**" value-ref="blStaticAssetViewController"/>
+            </map>
+        </property>
+    </bean>
+    
+</beans>
