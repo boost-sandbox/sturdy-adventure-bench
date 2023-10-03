@@ -24,3 +24,11 @@ node_modules
 *.woff2
 *.ttf
 *.mp3
+*.sol
+*.ico
+*.jpeg
+*.exe
+*.pdf
+*.docx
+*.eot
+*.otf
